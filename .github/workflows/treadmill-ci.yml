@@ -58,10 +58,6 @@ jobs:
           popd
           echo "$PWD/treadmill/target/debug" >> "$GITHUB_PATH"
 
-      - name: Login to the Treadmill Switchboard
-        run:
-          tml login lschuermann ${{ secrets.TREADMILL_LOGIN_PASSWORD }}
-
       - name: Analyze changes and determine types of tests to run
         run: |
           echo "TODO: implement this!"
@@ -78,6 +74,7 @@ jobs:
         id: treadmill-job-launch
         env:
           GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          TML_API_TOKEN: ${{ secrets.TREADMILL_API_TOKEN }}
         run: |
           SUB_TEST_ID="0"
 
@@ -189,11 +186,9 @@ jobs:
           popd
           echo "$PWD/treadmill/target/debug" >> "$GITHUB_PATH"
 
-      - name: Login to the Treadmill Switchboard
-        run:
-          tml login lschuermann ${{ secrets.TREADMILL_LOGIN_PASSWORD }}
-
       - name: Cancel Treadmill jobs
+        env:
+          TML_API_TOKEN: ${{ secrets.TREADMILL_API_TOKEN }}
         run: |
           echo '${{ needs.test-strategy.outputs.tml-job-ids }}' \
             | jq -rc '.[]' \

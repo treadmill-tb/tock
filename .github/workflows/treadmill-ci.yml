@@ -96,14 +96,14 @@ jobs:
               \"secret\": true, \
               \"value\": \"$(echo "$RUNNER_CONFIG_JSON" | jq -r '.encoded_jit_config')\" \
             }, \
-            \"gh-actions-runner-exec-stop-post.sh\": {\
+            \"gh-actions-runner-exec-stop-post-sh\": {\
               \"secret\": false, \
               \"value\": \"if [ \\\"\$SERVICE_RESULT\\\" = \\\"success\\\" ]; then systemctl poweroff; fi\" \
             }\
           }"
           # echo "Parameters: $TML_JOB_PARAMETERS"
           TML_JOB_ID_JSON="$(tml job enqueue \
-            0b6551c2cb43f0388a0293f8068121de7a2cfeaada8c4ba68636b7c4dac95557 \
+            489d1b9f677856e415b87c6ffa3312b567de437b75a462a0253cf359a0bd51e9 \
             --tag-config 'board:nrf52840dk' \
             --ssh-keys 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFjLuM7C6emv+xAFYnXA+mSUKmMEmKDM0A6WzZ0HliFb cardno:23_559_180' \
             --parameters "$TML_JOB_PARAMETERS" \

@@ -95,10 +95,10 @@ jobs:
             \"gh-actions-runner-encoded-jit-config\": {\
               \"secret\": true, \
               \"value\": \"$(echo "$RUNNER_CONFIG_JSON" | jq -r '.encoded_jit_config')\" \
-            },\
+            }, \
             \"gh-actions-runner-exec-stop-post.sh\": {\
               \"secret\": false, \
-              \"value\": \"if [ \"\$SERVICE_RESULT\" = \"success\" ]; then systemctl poweroff; fi\" \
+              \"value\": \"if [ \\\"\$SERVICE_RESULT\\\" = \\\"success\\\" ]; then systemctl poweroff; fi\" \
             }\
           }"
           # echo "Parameters: $TML_JOB_PARAMETERS"

@@ -1,3 +1,3 @@
-from console_hello_test import MultiAlarmTest
+from console_hello_test import MultiAlarmSimpleTest
 
-test = MultiAlarmTest()
+test = MultiAlarmSimpleTest()

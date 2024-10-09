@@ -163,7 +163,7 @@ jobs:
           pwd
           unset RUSTFLAGS
           cd ./hwci
-          python3 main.py --board nrf52dk.py --test c_hello.py
+          python3 main.py --board nrf52dk.py --test multi_alarm_simple_test.py
       - name: Request shutdown after successful job completion
         run: |
           sudo touch /run/github-actions-shutdown

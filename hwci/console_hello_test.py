@@ -44,16 +44,11 @@ class AnalyzeConsoleTest(OneshotTest):
         pass  # To be implemented by subclasses
 
 
-class MultiAlarmTest(AnalyzeConsoleTest):
+class MultiAlarmSimpleTest(AnalyzeConsoleTest):
     def __init__(self):
         super().__init__(apps=["multi_alarm_simple_test"])
 
     def analyze(self, lines):
-        """
-        Analyzes the output lines from the multi_alarm_simple_test.
-        Checks if both alarms are firing and if alarm 1 fires approximately
-        twice as often as alarm 2.
-        """
         alarm_times = defaultdict(list)
         logging.debug(f"Analyzing output lines: {lines}")
 
@@ -71,10 +66,10 @@ class MultiAlarmTest(AnalyzeConsoleTest):
                 logging.debug(f"Ignoring non-matching line: {line}")
 
         logging.info(f"Alarm times: {dict(alarm_times)}")
+
         # Check if both alarms are present
         if 1 not in alarm_times or 2 not in alarm_times:
-            logging.error("Not all alarms are present in the output")
-            return False
+            raise Exception("Not all alarms are present in the output")
 
         # Get the counts
         count_alarm_1 = len(alarm_times[1])
@@ -86,13 +81,11 @@ class MultiAlarmTest(AnalyzeConsoleTest):
         # Check if alarm 1 fires approximately twice as often as alarm 2
         ratio = count_alarm_1 / count_alarm_2
         if ratio < 1.5 or ratio > 2.5:
-            logging.error(
+            raise Exception(
                 f"Alarm 1 did not fire approximately twice as often as Alarm 2. Ratio: {ratio}"
             )
-            return False
 
         logging.info("Alarms are firing as expected")
-        return True
 
 
 class WaitForConsoleMessageTest(OneshotTest):
@@ -106,7 +99,7 @@ class WaitForConsoleMessageTest(OneshotTest):
         if output:
             logging.info(f"Received expected message: '{self.message}'")
         else:
-            logging.error(f"Did not receive expected message: '{self.message}'")
+            raise Exception(f"Did not receive expected message: '{self.message}'")
 
 
 # Example usage:

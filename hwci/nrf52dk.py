@@ -4,6 +4,7 @@ from tockloader_board import TockloaderBoard
 import os
 import subprocess
 import logging
+from serial_port import SerialPort
 from contextlib import contextmanager
 import serial.tools.list_ports
 
@@ -17,6 +18,7 @@ class Nrf52dk(TockloaderBoard):
         self.uart_baudrate = self.get_uart_baudrate()
         self.openocd_board = "nrf52dk"
         self.board = "nrf52dk"
+        self.serial = self.get_serial_port()  # Set serial attribute
 
     def get_uart_port(self):
         logging.info("Getting list of serial ports")
@@ -34,6 +36,12 @@ class Nrf52dk(TockloaderBoard):
 
     def get_uart_baudrate(self):
         return 115200  # Default baudrate for the board
+
+    def get_serial_port(self):
+        logging.info(
+            f"Using serial port: {self.uart_port} at baudrate {self.uart_baudrate}"
+        )
+        return SerialPort(self.uart_port, self.uart_baudrate)
 
     def erase_board(self):
         logging.info("Erasing the board")

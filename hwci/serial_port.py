@@ -1,6 +1,10 @@
 import serial
 from pexpect import fdpexpect
 import logging
+import queue
+import re
+import time
+import logging
 
 
 class SerialPort:
@@ -35,3 +39,44 @@ class SerialPort:
     def close(self):
         self.ser.close()
         logging.info(f"Closed serial port {self.port}")
+
+
+class MockSerialPort:
+    def __init__(self):
+        self.buffer = queue.Queue()
+        self.accumulated_data = b''
+
+    def write(self, data):
+        logging.debug(f"Writing data: {data}")
+        self.buffer.put(data)
+
+    def expect(self, pattern, timeout=10):
+        end_time = time.time() + timeout
+        compiled_pattern = re.compile(pattern.encode())
+        while time.time() < end_time:
+            try:
+                data = self.buffer.get(timeout=0.1)
+                logging.debug(f"Received data chunk: {data}")
+                self.accumulated_data += data
+                if compiled_pattern.search(self.accumulated_data):
+                    logging.debug(f"Matched pattern '{pattern}'")
+                    return self.accumulated_data
+            except queue.Empty:
+                continue
+        logging.error(f"Timeout waiting for pattern '{pattern}'")
+        return None
+
+    def flush_buffer(self):
+        self.accumulated_data = b''
+        while not self.buffer.empty():
+            self.buffer.get()
+
+    def close(self):
+        pass  # Nothing to close in the mock
+
+    def reset_input_buffer(self):
+        self.flush_buffer()
+
+    def reset_output_buffer(self):
+        pass  # No output buffer to reset in the mock
+

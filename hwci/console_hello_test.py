@@ -8,24 +8,25 @@ class OneshotTest(TestHarness):
     def __init__(self, apps=[]):
         self.apps = apps
 
-    def test(self, serial, gpio, board):
+    def test(self, board):
         logging.info("Starting OneshotTest")
         board.erase_board()
-        serial.flush_buffer()
+        board.serial.flush_buffer()
         board.flash_kernel()
         for app in self.apps:
             board.flash_app(app)
-        self.oneshot_test(serial, gpio, board)
+        self.oneshot_test(board)
         logging.info("Finished OneshotTest")
 
-    def oneshot_test(self, serial, gpio, board):
+    def oneshot_test(self, board):
         pass  # To be implemented by subclasses
 
 
 class AnalyzeConsoleTest(OneshotTest):
-    def oneshot_test(self, serial, gpio, board):
+    def oneshot_test(self, board):
         logging.info("Starting AnalyzeConsoleTest")
         lines = []
+        serial = board.serial
         try:
             while True:
                 output = serial.expect(".*\r\n", timeout=5)
@@ -35,9 +36,9 @@ class AnalyzeConsoleTest(OneshotTest):
                     lines.append(line)
                 else:
                     break
+            self.analyze(lines)
         except Exception as e:
             logging.error(f"Error during serial communication: {e}")
-        self.analyze(lines)
         logging.info("Finished AnalyzeConsoleTest")
 
     def analyze(self, lines):
@@ -93,14 +94,10 @@ class WaitForConsoleMessageTest(OneshotTest):
         super().__init__(apps)
         self.message = message
 
-    def oneshot_test(self, serial, gpio, board):
+    def oneshot_test(self, board):
         logging.info(f"Waiting for message: '{self.message}'")
-        output = serial.expect(self.message, timeout=10)
+        output = board.serial.expect(self.message, timeout=10)
         if output:
             logging.info(f"Received expected message: '{self.message}'")
         else:
             raise Exception(f"Did not receive expected message: '{self.message}'")
-
-
-# Example usage:
-# test = WaitForConsoleMessageTest(["c_hello"], "Hello World")

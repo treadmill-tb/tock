@@ -1,3 +1,3 @@
 class TestHarness:
-    def test(self, serial, gpio, board):
+    def test(self, board):
         pass

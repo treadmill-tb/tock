@@ -4,8 +4,8 @@ class BoardHarness:
     kernel_board_path = None
 
     def __init__(self):
-        self.serial = self.get_serial_port()
-        self.gpio = self.get_gpio_interface()
+        self.serial = None
+        self.gpio = None
 
     def get_uart_port(self):
         pass

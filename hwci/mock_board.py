@@ -14,6 +14,7 @@ class MockBoard(BoardHarness):
         self.kernel_board_path = "tock/boards/nordic/nrf52840dk"
         self.uart_port = self.get_uart_port()
         self.uart_baudrate = self.get_uart_baudrate()
+        self.serial = self.get_serial_port()
         self.serial_output_thread = None
         self.running = False
 
@@ -53,7 +54,6 @@ class MockBoard(BoardHarness):
             self.running = False
             logging.info("Mock serial output thread finished")
 
-        self.serial = MockSerialPort()
         self.serial_output_thread = threading.Thread(target=output_thread)
         self.serial_output_thread.start()
         time.sleep(1)
@@ -78,7 +78,6 @@ class MockBoard(BoardHarness):
                     self.running = False
             logging.info("Mock multi-alarm serial output thread finished")
 
-        self.serial = MockSerialPort()
         self.serial_output_thread = threading.Thread(target=output_thread)
         self.serial_output_thread.start()
 

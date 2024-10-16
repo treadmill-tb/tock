@@ -23,7 +23,7 @@ jobs:
   test-prepare:
     runs-on: ubuntu-latest
     # Do not run job on forks
-    if: github.repository == 'tock/tock'
+    if: github.repository == 'treadmill-tb/tock'
     # This provides access to the secrets required below:
     # - for `treadmill-ci`: after approval by certain persons or GH teams
     # - for `treadmill-ci-merged`: without approval, on merge queue branches

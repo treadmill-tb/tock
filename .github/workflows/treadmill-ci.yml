@@ -6,37 +6,16 @@
 #
 # Treadmill is a distributed hardware testbed developed within the Tock OS
 # project. For more information on Treadmill, have a look at its documentation
-# [1] or repository [2].
 #
-# This workflow is based on the Treadmill GitHub Actions integration guide [3].
-# In addition, it features the ability to run multiple Treadmill jobs and
-# test-execute stages through GitHub Action's job matrices, and uses a GitHub
-# environment to allow deployments with access to secrets for select PRs.
-#
-# [1]: https://book.treadmill.ci/
-# [2]: https://github.com/treadmill-tb/treadmill
-# [3]: https://book.treadmill.ci/user-guide/github-actions-integration.html
-
 name: treadmill-ci
 env:
   TERM: xterm # Makes tput work in actions output
-# Controls when the action will run. Triggers the workflow on pull request and
-# merge group checks:
-#
-# KEEP IN SYNC WITH `environment:` ATTRIBUTE BELOW:
+# Controls when the action will run. Triggers the workflow on all pushes and pull requests:
 on:
   push:
     branches:
-      - master
-  # Pull requests from forks will not have access to the required GitHub API
-  # secrets below, even if they are using an appropriate deployment environment
-  # and the workflow runs have been approved according to this environment's
-  # rules. We don't know whether this is a bug on GitHub's end or deliberate.
-  # Either way, for now we disable this workflow to run on PRs until we have
-  # an API proxy that securely performs these GitHub API calls (adding runners
-  # and starting Treadmill jobs with those runner registration tokens), which
-  # allows this workflow to run without access to repository secrets.
-  #pull_request:
+      - '**' # This will match all branch names
+  pull_request:
   merge_group: # Run CI for the GitHub merge queue
 permissions:
   contents: read
@@ -48,9 +27,7 @@ jobs:
     # This provides access to the secrets required below:
     # - for `treadmill-ci`: after approval by certain persons or GH teams
     # - for `treadmill-ci-merged`: without approval, on merge queue branches
-    #   and the master branch
-    #
-    # KEEP IN SYNC WITH `on:` EVENTS ABOVE:
+    #   and all other branches
     environment: ${{ github.event_name == 'pull_request' && 'treadmill-ci' || 'treadmill-ci-merged' }}
     outputs:
       tml-job-ids: ${{ steps.treadmill-job-launch.outputs.tml-job-ids }}

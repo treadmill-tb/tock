@@ -83,3 +83,6 @@ class MockBoard(BoardHarness):
         self.running = False
         if self.serial_output_thread and self.serial_output_thread.is_alive():
             self.serial_output_thread.join()
+
+
+board = MockBoard()

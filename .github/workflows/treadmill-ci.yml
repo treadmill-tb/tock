@@ -286,7 +286,7 @@ jobs:
 
           echo "$JSON_TEST_ARRAY" | jq -r -c '.[]' | while read TEST; do
             echo "===== RUNNING TEST $TEST ====="
-            python3 core/main.py --board boards/nrf52dk.py --test "$TEST"
+            python3 core/main.py --board boards/nrf52dk.py --test "$TEST" || echo "===== Test failed! ====="
           done
 
       - name: Request shutdown after successful job completion

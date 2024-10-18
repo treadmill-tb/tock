@@ -263,7 +263,7 @@ jobs:
             git cargo openocd python3 python3-pip python3-serial \
             python3-pexpect gcc-arm-none-eabi libnewlib-arm-none-eabi \
             pkg-config libudev-dev cmake libusb-1.0-0-dev udev make \
-            gdb-multiarch gcc-arm-none-eabi build-essential || true
+            gdb-multiarch gcc-arm-none-eabi build-essential jq || true
 
           # Install probe-rs:
           curl --proto '=https' --tlsv1.2 -LsSf \
@@ -278,7 +278,7 @@ jobs:
 
       - name: Run tests
         env:
-          JSON_TEST_ARRAY: ${fromJSON(needs.test-prepare.outputs.tml-jobs)[matrix.tml-job-id].tests}
+          JSON_TEST_ARRAY: ${{ fromJSON(needs.test-prepare.outputs.tml-jobs)[matrix.tml-job-id].tests }}
         run: |
           source ./hwcienv/bin/activate
           cd ./tools/hwci

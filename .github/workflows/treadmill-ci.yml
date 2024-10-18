@@ -278,15 +278,15 @@ jobs:
 
       - name: Run tests
         env:
-          JSON_TEST_ARRAY: ${{ fromJSON(needs.test-prepare.outputs.tml-jobs)[matrix.tml-job-id].tests }}
+          JSON_TEST_ARRAY: ${{ toJSON(fromJSON(needs.test-prepare.outputs.tml-jobs)[matrix.tml-job-id].tests) }}
         run: |
           source ./hwcienv/bin/activate
           cd ./tools/hwci
           export PYTHONPATH="$PWD:$PYTHONPATH"
 
-          echo "$JSON_TEST_ARRAY" | jq -c '.[]' | while read TEST; do
+          echo "$JSON_TEST_ARRAY" | jq -r -c '.[]' | while read TEST; do
             echo "===== RUNNING TEST $TEST ====="
-            python3 core/main.py --board boards/nrf52dk.py --test $TEST
+            python3 core/main.py --board boards/nrf52dk.py --test "$TEST"
           done
 
       - name: Request shutdown after successful job completion
@@ -296,14 +296,14 @@ jobs:
       - name: Provide connection information on job failure
         if: failure()
         run: |
-          echo "This CI job has failed, we avoid terminating the Treadmill job"
-          echo "immediately. It will be active until it reaches its timeout."
-          echo ""
-          echo "If you added SSH keys to the `job enqueue` command, you can"
-          echo "open an interactive session to this host. Connection"
-          echo "information is available here:"
-          echo "https://book.treadmill.ci/treadmillci-deployment/sites.html"
-          echo ""
-          echo "TODO: print host / supervisor ID as part of workflow"
-          echo "TODO: determine public SSH endpoint automatically and print"
-          echo "TODO: allow adding SSH keys to running Treadmill jobs"
+          echo 'This CI job has failed, we avoid terminating the Treadmill job'
+          echo 'immediately. It will be active until it reaches its timeout.'
+          echo
+          echo 'If you added SSH keys to the `job enqueue` command, you can'
+          echo 'open an interactive session to this host. Connection'
+          echo 'information is available here:'
+          echo 'https://book.treadmill.ci/treadmillci-deployment/sites.html'
+          echo
+          echo 'TODO: print host / supervisor ID as part of workflow'
+          echo 'TODO: determine public SSH endpoint automatically and print'
+          echo 'TODO: allow adding SSH keys to running Treadmill jobs'

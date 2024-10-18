@@ -27,8 +27,8 @@ env:
 # KEEP IN SYNC WITH `environment:` ATTRIBUTE BELOW:
 on:
   push:
-    branches:
-      - master
+    # branches:
+    #   - master
   # Pull requests from forks will not have access to the required GitHub API
   # secrets below, even if they are using an appropriate deployment environment
   # and the workflow runs have been approved according to this environment's
@@ -47,16 +47,16 @@ jobs:
   test-prepare:
     runs-on: ubuntu-latest
 
-    # Do not run job on forks
-    if: github.repository == 'tock/tock'
+    # # Do not run job on forks
+    # if: github.repository == 'tock/tock'
 
-    # This provides access to the secrets required below:
-    # - for `treadmill-ci`: after approval by certain persons or GH teams
-    # - for `treadmill-ci-merged`: without approval, on merge queue branches
-    #   and the master branch
-    #
-    # KEEP IN SYNC WITH `on:` EVENTS ABOVE:
-    environment: ${{ github.event_name == 'pull_request' && 'treadmill-ci' || 'treadmill-ci-merged' }}
+    # # This provides access to the secrets required below:
+    # # - for `treadmill-ci`: after approval by certain persons or GH teams
+    # # - for `treadmill-ci-merged`: without approval, on merge queue branches
+    # #   and the master branch
+    # #
+    # # KEEP IN SYNC WITH `on:` EVENTS ABOVE:
+    # environment: ${{ github.event_name == 'pull_request' && 'treadmill-ci' || 'treadmill-ci-merged' }}
 
     outputs:
       tml-job-ids: ${{ steps.treadmill-job-launch.outputs.tml-job-ids }}
@@ -124,7 +124,35 @@ jobs:
           # identically:
           HOST_TYPE: nbd-netboot
           HOST_ARCH: arm64
+          # List of tests to run (as test names corresponding to the test scripts)
+          TESTS: |
+            tests/ble_env_sense.py
+            tests/ble_advertising.py
+            tests/ble_passive_scanning.py
+            tests/c_hello.py
+            tests/printf_long.py
+            tests/c_hello_and_printf_long.py
+            tests/sensors.py
+            tests/console_recv_short.py
+            tests/console_recv_long.py
+            tests/lua_hello.py
+            tests/malloc_test01.py
+            tests/malloc_test02.py
+            tests/stack_size_test01.py
+            tests/stack_size_test02.py
+            tests/mpu_stack_growth.py
+            tests/mpu_walk_region.py
+            tests/adc.py
+            tests/adc_continuous.py
+            tests/ipc_logic.py
+            tests/gpio_interrupt.py
+            tests/whileone.py
+            tests/multi_alarm_simple_test.py
+
         run: |
+          # Read the list of tests and convert to JSON array
+          TEST_LIST=$(echo "$TESTS" | jq -R -s -c 'split("\n") | map(select(length > 0))')
+
           # When we eventually launch tests on multiple hardware platforms in
           # parallel, we need to supply different SUB_TEST_IDs here:
           SUB_TEST_ID="0"
@@ -180,6 +208,7 @@ jobs:
           echo "tml-jobs={ \
             \"$TML_JOB_ID\": { \
               \"runner-id\": \"$RUNNER_ID\", \
+              \"tests\": $TEST_LIST \
             } \
           }" >> "$GITHUB_OUTPUT"
 
@@ -248,11 +277,17 @@ jobs:
           pip install -r tools/hwci/requirements.txt -c tools/hwci/requirements-frozen.txt
 
       - name: Run tests
+        env:
+          JSON_TEST_ARRAY: ${fromJSON(needs.test-prepare.outputs.tml-jobs)[matrix.tml-job-id].tests}
         run: |
           source ./hwcienv/bin/activate
           cd ./tools/hwci
           export PYTHONPATH="$PWD:$PYTHONPATH"
-          python3 core/main.py --board boards/nrf52dk.py --test tests/c_hello.py
+
+          echo "$JSON_TEST_ARRAY" | jq -c '.[]' | while read TEST; do
+            echo "===== RUNNING TEST $TEST ====="
+            python3 core/main.py --board boards/nrf52dk.py --test $TEST
+          done
 
       - name: Request shutdown after successful job completion
         run: |

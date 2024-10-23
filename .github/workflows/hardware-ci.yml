@@ -1,0 +1,29 @@
+name: Hardware CI
+on:
+  push:
+    branches:
+      - master
+      - test-reusable-workflow
+  pull_request:
+  merge_group:
+jobs:
+  notify-hardware-ci:
+    runs-on: ubuntu-latest
+    # Only run on the main Tock repository, not on forks
+    if: github.repository == 'treadmill-tb/tock'
+    steps:
+      - name: Trigger hardware CI workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.TOCK_CI_PAT }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: 'tock',
+              repo: 'tock-hardware-ci',
+              workflow_id: 'treadmill-ci-test.yml',
+              ref: 'master',
+              inputs: {
+                'tock-kernel-ref': '${{ github.sha }}',
+                'libtock-c-ref': 'master'
+              }
+            });

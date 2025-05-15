@@ -3,9 +3,10 @@
 // Copyright Tock Contributors 2024.
 
 use core::fmt::Write;
+use core::ptr::addr_of_mut;
 use kernel::debug::IoWrite;
 use kernel::hil::uart;
-use kernel::hil::uart::Configure;
+use kernel::hil::uart::{Configure, Transmit};
 
 use nrf52840::uart::{Uarte, UARTE0_BASE};
 
@@ -14,8 +15,8 @@ enum Writer {
     WriterRtt(&'static segger::rtt::SeggerRttMemory<'static>),
     WriterUsb(&'static capsules_extra::usb::cdc::CdcAcm<
         'static,
-        nrf52::usbd::Usbd,
-        capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm<'static, nrf52::rtc::Rtc>,
+        nrf52::usbd::Usbd<'static>,
+        capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm<'static, nrf52::rtc::Rtc<'static>>,
     >),
 }
 
@@ -29,8 +30,8 @@ pub unsafe fn set_rtt_memory(rtt_memory: &'static segger::rtt::SeggerRttMemory<'
 /// Set the USB CDC ACM driver for panic messages
 pub unsafe fn set_usb_cdc(cdc: &'static capsules_extra::usb::cdc::CdcAcm<
     'static,
-    nrf52::usbd::Usbd,
-    capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm<'static, nrf52::rtc::Rtc>,
+    nrf52::usbd::Usbd<'static>,
+    capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm<'static, nrf52::rtc::Rtc<'static>>,
 >) {
     WRITER = Writer::WriterUsb(cdc);
 }
@@ -73,7 +74,19 @@ impl IoWrite for Writer {
             Writer::WriterUsb(cdc) => {
                 // Since this is for panic output, we just try to write as much as we can
                 // without bothering with flow control or errors
-                let _ = cdc.write_buffer(buf);
+                let len = buf.len();
+                // Create a static buffer to pass to transmit_buffer
+                static mut TX_BUF: [u8; 64] = [0; 64];
+                let bytes_to_copy = core::cmp::min(len, 64);
+                unsafe {
+                    for i in 0..bytes_to_copy {
+                        TX_BUF[i] = buf[i];
+                    }
+                    let tx_buf_ptr = addr_of_mut!(TX_BUF);
+                    // Using the raw pointer to create a mutable reference with a non-static lifetime
+                    let tx_buf = &mut *tx_buf_ptr;
+                    let _ = cdc.transmit_buffer(tx_buf, bytes_to_copy);
+                }
             }
         }
         buf.len()

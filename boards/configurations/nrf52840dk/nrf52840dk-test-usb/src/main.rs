@@ -9,10 +9,10 @@
 #![no_main]
 #![deny(missing_docs)]
 
-use core::ptr::{addr_of, addr_of_mut};
+use core::ptr::addr_of;
 
-use capsules_core::virtualizers::virtual_alarm::MuxAlarm;
 use capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm;
+use capsules_extra::usb::usb_user::UsbSyscallDriver;
 use kernel::component::Component;
 use kernel::hil::led::LedLow;
 use kernel::hil::time::Counter;
@@ -46,10 +46,6 @@ const UART_RXD: Pin = Pin::P0_08;
 pub mod io;
 
 // State for loading and holding applications.
-// How should the kernel respond when a process faults.
-const FAULT_RESPONSE: capsules_system::process_policies::PanicFaultPolicy =
-    capsules_system::process_policies::PanicFaultPolicy {};
-
 // Number of concurrent processes this platform supports.
 const NUM_PROCS: usize = 8;
 
@@ -62,8 +58,8 @@ static mut PROCESS_PRINTER: Option<&'static capsules_system::process_printer::Pr
 static mut CDC_REF_FOR_PANIC: Option<
     &'static capsules_extra::usb::cdc::CdcAcm<
         'static,
-        nrf52::usbd::Usbd,
-        VirtualMuxAlarm<'static, nrf52::rtc::Rtc>,
+        nrf52::usbd::Usbd<'static>,
+        VirtualMuxAlarm<'static, nrf52::rtc::Rtc<'static>>,
     >,
 > = None;
 static mut NRF52_POWER: Option<&'static nrf52840::power::Power> = None;
@@ -105,12 +101,20 @@ pub struct Platform {
     >,
     rng: &'static RngDriver,
     alarm: &'static AlarmDriver,
-    // The USB driver for CDC-ACM (serial over USB)
+    // The USB CDC-ACM driver
+    // Used for panic output through the USB CDC-ACM interface
+    #[allow(dead_code)]
     usb_cdc: &'static capsules_extra::usb::cdc::CdcAcm<
         'static,
-        nrf52::usbd::Usbd,
+        nrf52::usbd::Usbd<'static>,
         VirtualMuxAlarm<'static, nrf52::rtc::Rtc<'static>>,
     >,
+    // The USB syscall driver that provides userspace access
+    usb_driver: &'static UsbSyscallDriver<'static, capsules_extra::usb::cdc::CdcAcm<
+        'static,
+        nrf52::usbd::Usbd<'static>,
+        VirtualMuxAlarm<'static, nrf52::rtc::Rtc<'static>>
+    >>,
     scheduler: &'static RoundRobinSched<'static>,
     systick: cortexm4::systick::SysTick,
     ipc: kernel::ipc::IPC<{ NUM_PROCS as u8 }>,
@@ -129,7 +133,7 @@ impl SyscallDriverLookup for Platform {
             capsules_core::button::DRIVER_NUM => f(Some(self.button)),
             capsules_core::rng::DRIVER_NUM => f(Some(self.rng)),
             capsules_extra::ble_advertising_driver::DRIVER_NUM => f(Some(self.ble_radio)),
-            capsules_extra::usb::cdc::DRIVER_NUM => f(Some(self.usb_cdc)),
+            capsules_extra::usb::usb_user::DRIVER_NUM => f(Some(self.usb_driver)),
             kernel::ipc::DRIVER_NUM => f(Some(&self.ipc)),
             _ => f(None),
         }
@@ -199,7 +203,7 @@ pub unsafe fn main() {
     //--------------------------------------------------------------------------
 
     // Keep reference to power module for bootloader entry
-    let power = &base_peripherals.power;
+    let power = &nrf52840_peripherals.nrf52.pwr_clk;
     NRF52_POWER = Some(power);
 
     //--------------------------------------------------------------------------
@@ -343,6 +347,16 @@ pub unsafe fn main() {
     // Store reference for panic handler
     CDC_REF_FOR_PANIC = Some(usb_cdc);
 
+    // Create USB syscall driver for userspace access
+    let usb_driver = static_init!(
+        UsbSyscallDriver<'static, capsules_extra::usb::cdc::CdcAcm<
+            'static,
+            nrf52::usbd::Usbd<'static>,
+            VirtualMuxAlarm<'static, nrf52::rtc::Rtc<'static>>
+        >>,
+        UsbSyscallDriver::new(usb_cdc, board_kernel.create_grant(capsules_extra::usb::usb_user::DRIVER_NUM, &memory_allocation_capability))
+    );
+
     // Enable USB CDC-ACM driver
     usb_cdc.enable();
     usb_cdc.attach();
@@ -465,6 +479,7 @@ pub unsafe fn main() {
             rng,
             alarm,
             usb_cdc,
+            usb_driver,
             scheduler,
             systick: cortexm4::systick::SysTick::new_with_calibration(64000000),
             ipc: kernel::ipc::IPC::new(
@@ -475,7 +490,7 @@ pub unsafe fn main() {
         }
     );
 
-    let _ = platform.console.start();
+    // Console initialization is done in the component
     let _ = pconsole.start();
 
     debug!("Initialization complete. Entering main loop");

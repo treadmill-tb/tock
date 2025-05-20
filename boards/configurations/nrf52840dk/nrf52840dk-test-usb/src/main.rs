@@ -14,6 +14,8 @@ use core::ptr::addr_of;
 use capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm;
 use capsules_extra::usb::usb_user::UsbSyscallDriver;
 use kernel::component::Component;
+use kernel::hil::time::Counter;
+use kernel::hil::usb::Client;
 use kernel::platform::{KernelResources, SyscallDriverLookup};
 use kernel::scheduler::round_robin::RoundRobinSched;
 use kernel::{capabilities, create_capability, debug, static_init};

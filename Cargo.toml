@@ -57,6 +57,7 @@ members = [
     "boards/configurations/nrf52840dk/nrf52840dk-test-appid-tbf",
     "boards/configurations/nrf52840dk/nrf52840dk-test-invs",
     "boards/configurations/nrf52840dk/nrf52840dk-test-kernel",
+    "boards/configurations/nrf52840dk/nrf52840dk-test-usb",
     "boards/tutorials/nrf52840dk-hotp-tutorial",
     "boards/tutorials/nrf52840dk-thread-tutorial",
     "capsules/aes_gcm",

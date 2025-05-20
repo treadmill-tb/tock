@@ -2,5 +2,5 @@
 /* SPDX-License-Identifier: Apache-2.0 OR MIT                         */
 /* Copyright Tock Contributors 2023.                                  */
 
-INCLUDE ../nrf52840_chip_layout.ld
+INCLUDE ../../../nordic/nrf52840_chip_layout.ld
 INCLUDE tock_kernel_layout.ld

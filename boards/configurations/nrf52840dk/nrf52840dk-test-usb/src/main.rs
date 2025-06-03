@@ -12,7 +12,7 @@
 
 use core::ptr::addr_of;
 
-use capsules_core::virtualizers::virtual_alarm::{MuxAlarm, VirtualMuxAlarm};
+use capsules_core::virtualizers::virtual_alarm::VirtualMuxAlarm;
 use kernel::component::Component;
 use kernel::hil::led::LedLow;
 use kernel::hil::time::Counter;
@@ -101,7 +101,7 @@ pub struct Platform {
     scheduler: &'static RoundRobinSched<'static>,
     systick: cortexm4::systick::SysTick,
     // USB CDC (Serial over USB)
-    cdc: &'static capsules_extra::usb::cdc::CdcAcm<'static, nrf52840::usbd::Usbd<'static>>,
+    cdc: &'static capsules_extra::usb::cdc::CdcAcm<'static, nrf52840::usbd::Usbd<'static>, VirtualMuxAlarm<'static, nrf52840::rtc::Rtc<'static>>>,
 }
 
 impl SyscallDriverLookup for Platform {
@@ -483,6 +483,10 @@ pub unsafe fn main() {
         nrf52840::usbd::Usbd,
         nrf52840::rtc::Rtc
     ));
+
+    // Create the USB user driver for syscall interface
+    // Note: CDC already creates and sets the USB client, so we can't create another one
+    // For now, we'll just enable USB through CDC
 
     // Enable and attach the USB device so it will enumerate
     cdc.enable();

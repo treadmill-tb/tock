@@ -1,0 +1,1 @@
+../../../nordic/nrf52840dk/layout.ld
